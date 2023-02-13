@@ -1,8 +1,6 @@
-use clap::Parser;
-use miette::{IntoDiagnostic, Result};
-// use std::process::Command;
-
 use std::time::Duration;
+
+use miette::{IntoDiagnostic, Result};
 use watchexec::{
     action::{Action, Outcome},
     command::Command,
@@ -13,27 +11,10 @@ use watchexec::{
     signal::source::MainSignal,
     ErrorHook, Watchexec,
 };
-// fn main() {
-//     // Command::new("solana")
-//     //     .args(["config", "set", "--url", "http://api.devnet.solana.com"])
-//     //     .output()
-//     //     .expect("solana  commad failed");
-//     // let output = Command::new("solana-test-validator")
-//     //     .output()
-//     //     .expect("solana  commad failed");
 
-//     // println!(
-//     //     "started the server {}",
-//     //     String::from_utf8_lossy(&output.stdout)
-//     // );
-
-//     let mut init = InitConfig::default();
-// }
-
+// Run with: `env RUST_LOG=debug cargo run --example print_out`
 #[tokio::main]
 async fn main() -> Result<()> {
-    // tracing_subscriber::fmt::init();
-
     let mut init = InitConfig::default();
     init.on_error(|err: ErrorHook| async move {
         eprintln!("Watchexec Runtime Error: {}", err.error);
@@ -43,9 +24,10 @@ async fn main() -> Result<()> {
     let mut runtime = RuntimeConfig::default();
     runtime.pathset(["src"]);
     runtime.command(Command::Exec {
-        prog: "date".into(),
-        args: Vec::new(),
+        prog: "solana".to_string(),
+        args: vec!["--version".to_string()],
     });
+
     let wx = Watchexec::new(init, runtime.clone())?;
     let w = wx.clone();
 
@@ -54,7 +36,7 @@ async fn main() -> Result<()> {
         let mut config = config.clone();
         let w = w.clone();
         async move {
-            // eprintln!("Watchexec Action: {action:?}");
+            eprintln!("Watchexec Action: {action:?}");
 
             let sigs = action
                 .events
@@ -75,8 +57,9 @@ async fn main() -> Result<()> {
             } else {
                 action.outcome(Outcome::if_running(
                     Outcome::both(Outcome::Stop, Outcome::Start),
-                    Outcome::Start,
+                    Outcome::Stop,
                 ));
+                // w.reconfigure(config)?;
             }
 
             Ok::<(), ReconfigError>(())
