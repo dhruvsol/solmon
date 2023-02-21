@@ -13,22 +13,6 @@ use watchexec::{
     signal::source::MainSignal,
     ErrorHook, Watchexec,
 };
-// fn main() {
-//     // Command::new("solana")
-//     //     .args(["config", "set", "--url", "http://api.devnet.solana.com"])
-//     //     .output()
-//     //     .expect("solana  commad failed");
-//     // let output = Command::new("solana-test-validator")
-//     //     .output()
-//     //     .expect("solana  commad failed");
-
-//     // println!(
-//     //     "started the server {}",
-//     //     String::from_utf8_lossy(&output.stdout)
-//     // );
-
-//     let mut init = InitConfig::default();
-// }
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -43,8 +27,8 @@ async fn main() -> Result<()> {
     let mut runtime = RuntimeConfig::default();
     runtime.pathset(["src"]);
     runtime.command(Command::Exec {
-        prog: "date".into(),
-        args: Vec::new(),
+        prog: "solana".to_string(),
+        args: ["--version".to_string()].to_vec(),
     });
     let wx = Watchexec::new(init, runtime.clone())?;
     let w = wx.clone();
@@ -54,8 +38,6 @@ async fn main() -> Result<()> {
         let mut config = config.clone();
         let w = w.clone();
         async move {
-            // eprintln!("Watchexec Action: {action:?}");
-
             let sigs = action
                 .events
                 .iter()
@@ -72,7 +54,7 @@ async fn main() -> Result<()> {
                 eprintln!("Switching to polling for funsies");
                 config.file_watcher(Watcher::Poll(Duration::from_millis(50)));
                 w.reconfigure(config)?;
-            } else {
+            } else if (action.events.iter().flat_map(Event::paths).next().is_some()) {
                 action.outcome(Outcome::if_running(
                     Outcome::both(Outcome::Stop, Outcome::Start),
                     Outcome::Start,
